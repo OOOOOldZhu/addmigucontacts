@@ -24,6 +24,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import io.reactivex.ObservableEmitter
 import io.reactivex.Observer
+import io.reactivex.Single
 import io.reactivex.disposables.Disposable
 import jxl.Workbook
 
@@ -67,28 +68,63 @@ class MainActivity : AppCompatActivity() {
 //            dialog!!.setMessage("添加中...")
 //            dialog!!.setCancelable(false)
 //        }
+        //打开系统文件管理器
+        //https://stackoom.com/question/404dO/Android-Kotlin-%E8%8E%B7%E5%8F%96FileNotFoundException%E5%B9%B6%E4%BB%8E%E6%96%87%E4%BB%B6%E9%80%89%E6%8B%A9%E5%99%A8%E4%B8%AD%E9%80%89%E6%8B%A9%E6%96%87%E4%BB%B6%E5%90%8D
         add_btn.setOnClickListener(object :View.OnClickListener{
             override fun onClick(v: View?) {
-                pipeWork()
-            }
-        });
-    }
-
-    fun pipeWork(){
-        Observable
-            .create<File> {
+                Log.i(TAG,"1");
+//                pipeWork()
                 val intent = Intent()
                     .setType("*/*")
                     .setAction(Intent.ACTION_GET_CONTENT)
 
                 startActivityForResult(Intent.createChooser(intent, "Select a file"), 111)
-
-//                        it.onNext(adapter.data[position] as File)
-//                        it.onComplete()
-                imetter = it;
             }
+        });
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        Log.i(TAG,"2");
+        // Selected a file to load
+        if ((requestCode == 111) && (resultCode == RESULT_OK)) {
+            val selectedFilename = data?.data //The uri with the location of the file
+            if (selectedFilename != null) {
+                val filenameURIStr = selectedFilename.toString()
+                if (filenameURIStr.endsWith(".xlsx", true)) {
+                    val msg = "Chosen file: " + filenameURIStr
+                    val toast = Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT)
+                    toast.show()
+                    var fil = File(selectedFilename.getPath())
+//                        imetter!!.onNext(fil)
+//                        imetter!!.onComplete()
+                    Log.i(TAG,"3");
+                    pipeWork(fil)
+                }
+                else {
+                    val msg = "The chosen file is not a .txt file!"
+                    val toast = Toast.makeText(applicationContext, msg, Toast.LENGTH_LONG)
+                    toast.show()
+                }
+            }
+            else {
+                val msg = "Null filename data received!"
+                val toast = Toast.makeText(applicationContext, msg, Toast.LENGTH_LONG)
+                toast.show()
+            }
+        }
+    }
+    fun pipeWork(fil:File){
+        Log.i(TAG,"4 = "+fil.absolutePath)
+
+        Observable
+            .create<File> {
+                it.onNext(fil)
+                it.onComplete()
+            }
+        //Single.just("")
             .flatMap {
-                Log.i(TAG,""+it.absolutePath)
+                Log.i(TAG,"5 = "+it.absolutePath)
                 val workBook = Workbook.getWorkbook(it)
                 val sheet = workBook.getSheet(0) // 获取第一张表格中的数据
                 val list = ArrayList<Contacts>()
@@ -114,50 +150,22 @@ class MainActivity : AppCompatActivity() {
                     if (dialog!!.isShowing && dialog != null) {
                         dialog!!.dismiss()
                     }
-                    toast("添加完毕")
+                    Log.i(TAG,"添加完毕")
                 }
 
                 override fun onSubscribe(d: Disposable) {
                 }
 
                 override fun onNext(t: Contacts) {
+                    Log.i(TAG,"onNext")
                     addContact(t)
                 }
 
                 override fun onError(e: Throwable) {
-                    toast("错误:${e.message}")
+                    Log.i(TAG,"错误 = "+e.message)
                 }
 
             })
-    }
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        // Selected a file to load
-        if ((requestCode == 111) && (resultCode == RESULT_OK)) {
-            val selectedFilename = data?.data //The uri with the location of the file
-            if (selectedFilename != null) {
-                val filenameURIStr = selectedFilename.toString()
-                if (filenameURIStr.endsWith(".xslx", true)) {
-                    val msg = "Chosen file: " + filenameURIStr
-                    val toast = Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT)
-                    toast.show()
-                    var fil = File(selectedFilename.getPath())
-                        imetter!!.onNext(fil)
-                        imetter!!.onComplete()
-                }
-                else {
-                    val msg = "The chosen file is not a .txt file!"
-                    val toast = Toast.makeText(applicationContext, msg, Toast.LENGTH_LONG)
-                    toast.show()
-                }
-            }
-            else {
-                val msg = "Null filename data received!"
-                val toast = Toast.makeText(applicationContext, msg, Toast.LENGTH_LONG)
-                toast.show()
-            }
-        }
     }
     fun addContact(contacts: Contacts) {
         // 联系人号码可能不止一个，例如 12345678901;12345678901

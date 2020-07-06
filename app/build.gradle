@@ -4,6 +4,8 @@ apply plugin: 'kotlin-android'
 
 apply plugin: 'kotlin-android-extensions'
 
+//apply plugin: 'kotlin-kapt'
+
 android {
     compileSdkVersion 29
     buildToolsVersion "30.0.0"
@@ -21,6 +23,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+//    dataBinding {
+//        enabled true
+//    }
 }
 
 dependencies {
@@ -33,7 +38,13 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
 
+    /*---------------------------------- 分割线 ---------------------------------- */
+    implementation 'androidx.cardview:cardview:1.0.0'
 
+    //implementation "com.android.databinding:compiler:3.0.1"
+    //kapt "com.android.databinding:compiler:3.0.1"
+
+   // implementation "com.android.databinding:compiler:3.0.1"
 
     // RxPermissions
     implementation 'com.tbruyelle.rxpermissions2:rxpermissions:0.9.5@aar'
@@ -47,4 +58,5 @@ dependencies {
     implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.33'
     // dialogs
     implementation 'com.afollestad.material-dialogs:core:0.9.5.0'
+    implementation 'androidx.cardview:cardview:1.0.0'
 }

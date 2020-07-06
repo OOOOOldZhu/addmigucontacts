@@ -138,15 +138,13 @@ class MainActivity : AppCompatActivity() {
             val selectedFilename = data?.data //The uri with the location of the file
             if (selectedFilename != null) {
                 val filenameURIStr = selectedFilename.toString()
-                if (filenameURIStr.endsWith(".txt", true)) {
+                if (filenameURIStr.endsWith(".xslx", true)) {
                     val msg = "Chosen file: " + filenameURIStr
                     val toast = Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT)
                     toast.show()
                     var fil = File(selectedFilename.getPath())
-                    if(imetter != null){
                         imetter!!.onNext(fil)
                         imetter!!.onComplete()
-                    }
                 }
                 else {
                     val msg = "The chosen file is not a .txt file!"

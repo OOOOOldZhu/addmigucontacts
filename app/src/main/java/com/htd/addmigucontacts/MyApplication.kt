@@ -1,7 +1,6 @@
 package com.htd.addmigucontacts
 
 import android.app.Application
-import androidx.appcompat.app.AppCompatActivity
 import androidx.multidex.MultiDex
 
 

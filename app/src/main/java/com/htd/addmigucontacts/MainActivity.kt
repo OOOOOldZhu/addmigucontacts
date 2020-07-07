@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
 
     private var dialog: ProgressDialog? = null
 
-    private var imetter:ObservableEmitter<File>? = null ;
+    private var imetter: ObservableEmitter<File>? = null;
 
     private var TAG = "zhu";
 
@@ -56,19 +56,19 @@ class MainActivity : AppCompatActivity() {
         // 检查权限
         val rxPermissions = RxPermissions(this)
         rxPermissions
-                .request(
-                        Manifest.permission.READ_EXTERNAL_STORAGE,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                        Manifest.permission.READ_CONTACTS,
-                        Manifest.permission.WRITE_CONTACTS
-                )
-                .subscribe {
-                    if (!it) {
-                        Toast.makeText(this,"请打开相关权限",Toast.LENGTH_SHORT);
-                        // 如果权限申请失败，则退出
-                        //android.os.Process.killProcess(android.os.Process.myPid())
-                    }
+            .request(
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_CONTACTS,
+                Manifest.permission.WRITE_CONTACTS
+            )
+            .subscribe {
+                if (!it) {
+                    Toast.makeText(this, "请打开相关权限", Toast.LENGTH_SHORT);
+                    // 如果权限申请失败，则退出
+                    //android.os.Process.killProcess(android.os.Process.myPid())
                 }
+            }
 
 //        if (dialog == null) {
 //            dialog = ProgressDialog(this)
@@ -77,13 +77,13 @@ class MainActivity : AppCompatActivity() {
 //        }
         //打开系统文件管理器
         //https://stackoom.com/question/404dO/Android-Kotlin-%E8%8E%B7%E5%8F%96FileNotFoundException%E5%B9%B6%E4%BB%8E%E6%96%87%E4%BB%B6%E9%80%89%E6%8B%A9%E5%99%A8%E4%B8%AD%E9%80%89%E6%8B%A9%E6%96%87%E4%BB%B6%E5%90%8D
-        add_btn.setOnClickListener(object :View.OnClickListener{
+        add_btn.setOnClickListener(object : View.OnClickListener {
             override fun onClick(v: View?) {
-                Log.i(TAG,"1");
+                Log.i(TAG, "1");
 //                pipeWork()
                 val intent = Intent()
                     .setType("*/*")
-               // intent.setDataAndType(path, "application/excel");
+                    // intent.setDataAndType(path, "application/excel");
                     .setAction(Intent.ACTION_GET_CONTENT)
 
                 startActivityForResult(Intent.createChooser(intent, "Select a file"), 111)
@@ -93,7 +93,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        Log.i(TAG,"2");
+        Log.i(TAG, "2");
         // Selected a file to load
         if ((requestCode == 111) && (resultCode == RESULT_OK)) {
             val selectedFilename = data?.data //The uri with the location of the file
@@ -106,17 +106,15 @@ class MainActivity : AppCompatActivity() {
                     var fil = File(selectedFilename.getPath())
 //                        imetter!!.onNext(fil)
 //                        imetter!!.onComplete()
-                    Log.i(TAG,"3");
+                    Log.i(TAG, "3");
                     //pipeWork(fil)
                     readXslx(fil)
-                }
-                else {
+                } else {
                     val msg = "The chosen file is not a .txt file!"
                     val toast = Toast.makeText(applicationContext, msg, Toast.LENGTH_LONG)
                     toast.show()
                 }
-            }
-            else {
+            } else {
                 val msg = "Null filename data received!"
                 val toast = Toast.makeText(applicationContext, msg, Toast.LENGTH_LONG)
                 toast.show()
@@ -125,106 +123,103 @@ class MainActivity : AppCompatActivity() {
     }
 
     //https://www.jianshu.com/p/9bf1f7f7b642
-    fun readXslx(file:File){
-        // Example unsupportedDevice property
-        var isLowRamDevice = false
-        val isUnsupportedDevice by lazy { Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP || isLowRamDevice }
-        val workbook = if (isUnsupportedDevice) {
-            toast("您的手机系统版本太低了!")
-            HSSFWorkbook()
-        } else {
-            WorkbookFactory.create(file)
-        }
-        workbook.use { workBook ->
-            val sheet = workBook.getSheetAt(0)
-            val list = ArrayList<Contacts>()
-
-            var i = 0;
-            sheet.rowIterator().forEach { row->{
-                //row.
-                if(i == 0){
-                    Log.i(TAG,row.toString());
-                }
-                i ++;
-            } }
-            //sheet.rowIterator().
-        }
-    }
-    fun pipeWork(fil:File){
-        try {
-
-
-            Log.i(TAG, "4 = " + fil.absolutePath)
-//            val workBook = Workbook.getWorkbook(fil)
-            val workBook = Workbook.getWorkbook(fil)
-            val sheet = workBook.getSheet(0) // 获取第一张表格中的数据
-            val list = ArrayList<Contacts>()
-            // 行数
-            for (row in 0 until sheet.rows) {
-                list.add(
-                    Contacts(
-                        sheet.getCell(14, row).contents,   // 第一列是姓名
-                        sheet.getCell(15, row).contents, // 省份
-                        sheet.getCell(16, row).contents    //  手机号
-                    )
-                )
+    fun readXslx(file: File) {
+        var workbook = XSSFWorkbook(file);
+        var sheet = workbook.getSheetAt(0);
+        var rowsCount = sheet.getPhysicalNumberOfRows();
+        var formulaEvaluator = workbook.getCreationHelper().createFormulaEvaluator();
+        for (i in 0..rowsCount) {
+            var row = sheet.getRow(i);
+            if(i ==0 ){
+                Log.i(TAG,row.toString())
             }
-            workBook.close()
-            Log.d(TAG, list.first().name)
-        } catch (e: Exception) {
-            Log.e(TAG,e.toString());
         }
-    }
-    fun addContact(contacts: Contacts) {
-        // 联系人号码可能不止一个，例如 12345678901;12345678901
-        val phone = contacts.phone.split(";".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+//            int cellsCount = row . getPhysicalNumberOfCells ();
+//            for (int c = 0; c < cellsCount; c++) {
+//                String value = getCellAsString (row, c, formulaEvaluator);
+//                String cellInfo = "r:"+r+"; c:"+c+"; v:"+value;
+//                printlnToUser(cellInfo);
+//            }
 
-        // 创建一个空的ContentValues
-        val values = ContentValues()
-        // 向RawContacts.CONTENT_URI空值插入，
-        // 先获取Android系统返回的rawContactId
-        // 后面要基于此id插入值
-        val rawContactUri = contentResolver.insert(RawContacts.CONTENT_URI, values)
-        val rawContactId = ContentUris.parseId(rawContactUri)
-        values.clear()
+        }
 
-        values.put(Data.RAW_CONTACT_ID, rawContactId)
-        // 内容类型
-        values.put(Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE)
-        // 联系人名字
-        values.put(StructuredName.GIVEN_NAME, contacts.name)
-        // 向联系人URI添加联系人名字
-        contentResolver.insert(ContactsContract.Data.CONTENT_URI, values)
-        values.clear()
+        fun pipeWork(fil: File) {
+            try {
 
-        values.put(Data.RAW_CONTACT_ID, rawContactId)
-        values.put(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE)
-        // 联系人的电话号码
-        values.put(Phone.NUMBER, phone[0])
-        // 电话类型
-        values.put(Phone.TYPE, Phone.TYPE_MOBILE)
-        // 向联系人电话号码URI添加电话号码
-        contentResolver.insert(Data.CONTENT_URI, values)
-        values.clear()
 
-        // 当联系人存在多个号码，第二个号码存在工作电话
-        if (phone.size > 1) {
+                Log.i(TAG, "4 = " + fil.absolutePath)
+//            val workBook = Workbook.getWorkbook(fil)
+                val workBook = Workbook.getWorkbook(fil)
+                val sheet = workBook.getSheet(0) // 获取第一张表格中的数据
+                val list = ArrayList<Contacts>()
+                // 行数
+                for (row in 0 until sheet.rows) {
+                    list.add(
+                        Contacts(
+                            sheet.getCell(14, row).contents,   // 第一列是姓名
+                            sheet.getCell(15, row).contents, // 省份
+                            sheet.getCell(16, row).contents    //  手机号
+                        )
+                    )
+                }
+                workBook.close()
+                Log.d(TAG, list.first().name)
+            } catch (e: Exception) {
+                Log.e(TAG, e.toString());
+            }
+        }
+
+        fun addContact(contacts: Contacts) {
+            // 联系人号码可能不止一个，例如 12345678901;12345678901
+            val phone =
+                contacts.phone.split(";".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+
+            // 创建一个空的ContentValues
+            val values = ContentValues()
+            // 向RawContacts.CONTENT_URI空值插入，
+            // 先获取Android系统返回的rawContactId
+            // 后面要基于此id插入值
+            val rawContactUri = contentResolver.insert(RawContacts.CONTENT_URI, values)
+            val rawContactId = ContentUris.parseId(rawContactUri)
+            values.clear()
+
+            values.put(Data.RAW_CONTACT_ID, rawContactId)
+            // 内容类型
+            values.put(Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE)
+            // 联系人名字
+            values.put(StructuredName.GIVEN_NAME, contacts.name)
+            // 向联系人URI添加联系人名字
+            contentResolver.insert(ContactsContract.Data.CONTENT_URI, values)
+            values.clear()
+
             values.put(Data.RAW_CONTACT_ID, rawContactId)
             values.put(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE)
-            // 联系人的工作电话号码
-            values.put(Phone.NUMBER, phone[1])
+            // 联系人的电话号码
+            values.put(Phone.NUMBER, phone[0])
             // 电话类型
-            values.put(Phone.TYPE, Phone.TYPE_WORK_MOBILE)
+            values.put(Phone.TYPE, Phone.TYPE_MOBILE)
             // 向联系人电话号码URI添加电话号码
             contentResolver.insert(Data.CONTENT_URI, values)
             values.clear()
+
+            // 当联系人存在多个号码，第二个号码存在工作电话
+            if (phone.size > 1) {
+                values.put(Data.RAW_CONTACT_ID, rawContactId)
+                values.put(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE)
+                // 联系人的工作电话号码
+                values.put(Phone.NUMBER, phone[1])
+                // 电话类型
+                values.put(Phone.TYPE, Phone.TYPE_WORK_MOBILE)
+                // 向联系人电话号码URI添加电话号码
+                contentResolver.insert(Data.CONTENT_URI, values)
+                values.clear()
+            }
         }
+
+
+        fun toast(word: String) {
+            Toast.makeText(this, word, Toast.LENGTH_SHORT);
+
+        }
+
     }
-
-
-    fun toast(word:String){
-        Toast.makeText(this,word,Toast.LENGTH_SHORT);
-
-    }
-
-}

@@ -17,7 +17,7 @@ android {
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        multiDexEnabled true
+        //multiDexEnabled true
     }
     buildTypes {
         release {
@@ -82,6 +82,6 @@ dependencies {
     //implementation "com.github.SUPERCILEX.poi-android:proguard:3.17"
     //compileOnly "org.apache.poi:poi-ooxml:3.17"
 
-    //  https://github.com/andruhon/android5xlsx
-    compile 'com.android.support:multidex:1.0.1'
+    //  https://github.com/andruhon/android5xlsx   不好用
+   // implementation 'com.android.support:multidex:1.0.1'
 }

@@ -1,7 +1,6 @@
 package com.htd.addmigucontacts
 
 import android.Manifest
-import android.app.Activity
 import android.app.ProgressDialog
 import android.content.ContentValues
 import android.os.Bundle
@@ -15,36 +14,26 @@ import java.io.File
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.content.ContentUris
 import android.content.Intent
-import android.os.Build
 import android.os.Environment
 import android.provider.ContactsContract
 import android.provider.ContactsContract.RawContacts
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.Data;
-import android.util.ArrayMap
 import android.util.Log
-import android.util.Xml
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import io.reactivex.ObservableEmitter
 import io.reactivex.Observer
-import io.reactivex.Single
 import io.reactivex.disposables.Disposable
+import org.apache.poi.hssf.usermodel.HSSFDateUtil
+import org.apache.poi.ss.usermodel.Cell
+import org.apache.poi.ss.usermodel.FormulaEvaluator
+import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
-import org.xmlpull.v1.XmlPullParser
-import java.lang.Exception
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
-import java.util.zip.ZipInputStream
-import javax.xml.transform.Source
+import java.text.SimpleDateFormat
 
 class MainActivity : AppCompatActivity() {
 
-    val data = ArrayList<File>()
-
     private var dialog: ProgressDialog? = null
-
-    private var imetter: ObservableEmitter<File>? = null;
 
     private var TAG = "zhu";
 
@@ -82,8 +71,7 @@ class MainActivity : AppCompatActivity() {
         //https://stackoom.com/question/404dO/Android-Kotlin-%E8%8E%B7%E5%8F%96FileNotFoundException%E5%B9%B6%E4%BB%8E%E6%96%87%E4%BB%B6%E9%80%89%E6%8B%A9%E5%99%A8%E4%B8%AD%E9%80%89%E6%8B%A9%E6%96%87%E4%BB%B6%E5%90%8D
         add_btn.setOnClickListener(object : View.OnClickListener {
             override fun onClick(v: View?) {
-                Log.i(TAG, "1");
-//                pipeWork()
+//                rxTest();
                 val intent = Intent()
                     .setType("*/*")
                     // intent.setDataAndType(path, "application/excel");
@@ -96,7 +84,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        Log.i(TAG, "2");
+        Log.i(TAG, "onActivityResult()");
         // Selected a file to load
         if ((requestCode == 111) && (resultCode == RESULT_OK)) {
             val selectedFilename = data?.data //The uri with the location of the file
@@ -106,7 +94,8 @@ class MainActivity : AppCompatActivity() {
                     val msg = "Chosen file: " + filenameURIStr
                     val toast = Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT)
                     toast.show()
-                     var path = Environment.getExternalStorageDirectory( ).toString() +"/360/migu.xlsx"
+                    var path =
+                        Environment.getExternalStorageDirectory().toString() + "/360/migu.xlsx"
                     //var path2 = selectedFilename.path
                     //   /external_files/360/migu.xlsx
                     //var lastPath = path+path2!!.substring(12)
@@ -117,7 +106,6 @@ class MainActivity : AppCompatActivity() {
                     var fil = File(path)
 //                        imetter!!.onNext(fil)
 //                        imetter!!.onComplete()
-                    Log.i(TAG, "3");
                     //pipeWork(fil)
                     readXslx(fil)
                 } else {
@@ -133,23 +121,101 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun rxTest() {
+        Observable.create<String> {
+            it.onNext("Hello Rx!")
+            it.onComplete()
+        }
+            .subscribe(object : Observer<String> {
+                override fun onComplete() {
+
+                    Log.i(TAG, "添加完毕")
+                }
+
+                override fun onSubscribe(d: Disposable) {
+
+                }
+
+                override fun onNext(t: String) {
+                    Log.i(TAG, "onNext")
+                }
+
+                override fun onError(e: Throwable) {
+                    Log.i(TAG, "错误 = " + e.message)
+                }
+
+            })
+    }
+
     //https://www.jianshu.com/p/9bf1f7f7b642
     fun readXslx(file: File) {
-        val workbook = XSSFWorkbook(file)
-        val sheet = workbook.getSheetAt(0)
-        val rowsCount = sheet.getPhysicalNumberOfRows()
-        Log.i(TAG,"总行数： "+rowsCount)
-        val formulaEvaluator = workbook.getCreationHelper().createFormulaEvaluator()
-        for (r in 0 until rowsCount) {
-            val row = sheet.getRow(r)
-            val cellsCount = row.getPhysicalNumberOfCells()
-            for (c in 0 until cellsCount) {
-//                val value = getCellAsString(row, c, formulaEvaluator)
-//                val cellInfo = "r:$r; c:$c; v:$value"
-//                printlnToUser(cellInfo)
+        Log.i(TAG, "readXslx()")
+        Observable
+            .create<String> {
+                val list = ArrayList<Contacts>()
+                val workbook = XSSFWorkbook(file)
+                val sheet = workbook.getSheetAt(0)
+                val rowsCount = sheet.getPhysicalNumberOfRows()
+                Log.i(TAG, "总行数： " + rowsCount)
+                val formulaEvaluator = workbook.getCreationHelper().createFormulaEvaluator()
+                for (r in 0 until rowsCount) {
+                    val row = sheet.getRow(r)
+                    if (r == 0) {
+                        Log.i(TAG, row.toString());
+                    }
+                    val cellsCount = row.getPhysicalNumberOfCells()
+                    for (c in 0 until cellsCount) {
+                        val value = getCellAsString(row, c, formulaEvaluator)
+                        val cellInfo = "r:$r; c:$c; v:$value"
+                        //printlnToUser(cellInfo)
+                        Log.i(TAG,value)
+                        Log.i(TAG,cellInfo)
+                    }
+                }
+                workbook.close()
+
+                it.onNext("some")
+                it.onComplete()
             }
-        }
-        
+            .subscribeOn(Schedulers.io())
+            .doOnSubscribe {
+                runOnUiThread(Runnable {
+                    Log.i(TAG, "5555")
+                    if (dialog == null) {
+                        dialog = ProgressDialog(this)
+                        dialog!!.setMessage(".xlsx 文件读取中...")
+                        dialog!!.setCancelable(false)
+                    }
+                    if (!dialog!!.isShowing && dialog != null) {
+                        dialog!!.show()
+                    }
+                })
+            }
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(object : Observer<String> {
+                override fun onComplete() {
+                    runOnUiThread(Runnable {
+                        if (dialog!!.isShowing && dialog != null) {
+                            dialog!!.dismiss()
+                        }
+                    })
+                    Log.i(TAG, "添加完毕")
+                }
+
+                override fun onSubscribe(d: Disposable) {
+
+                }
+
+                override fun onNext(t: String) {
+                    Log.i(TAG, "onNext")
+                    //addContact(t)
+                }
+
+                override fun onError(e: Throwable) {
+                    Log.i(TAG, "错误 = " + e.message)
+                }
+
+            })
     }
 
     fun addContact(contacts: Contacts) {
@@ -202,11 +268,36 @@ class MainActivity : AppCompatActivity() {
 
     fun toast(word: String) {
         Toast.makeText(this, word, Toast.LENGTH_SHORT);
-
     }
 
+    protected fun getCellAsString(row: Row, c: Int, formulaEvaluator: FormulaEvaluator): String {
+        var value = ""
+        try {
+            val cell = row.getCell(c)
+            val cellValue = formulaEvaluator.evaluate(cell)
+            when (cellValue.cellType) {
+                Cell.CELL_TYPE_BOOLEAN -> value = "" + cellValue.booleanValue
+                Cell.CELL_TYPE_NUMERIC -> {
+                    val numericValue = cellValue.numberValue
+                    if (HSSFDateUtil.isCellDateFormatted(cell)) {
+                        val date = cellValue.numberValue
+                        val formatter = SimpleDateFormat("dd/MM/yy")
+                        value = formatter.format(HSSFDateUtil.getJavaDate(date))
+                    } else {
+                        value = "" + numericValue
+                    }
+                }
+                Cell.CELL_TYPE_STRING -> value = "" + cellValue.stringValue
+            }
+        } catch (e: NullPointerException) {
+            /* proper error handling should be here */
+            //printlnToUser(e.toString())
+        }
+
+        return value
+    }
+
+
+
 }
 
-private fun <T> Single<T>.flatMap(function: (T) -> () -> Unit) {
-
-}

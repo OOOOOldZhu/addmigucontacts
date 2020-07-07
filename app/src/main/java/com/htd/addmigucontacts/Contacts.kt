@@ -5,5 +5,6 @@ package com.htd.addmigucontacts
  */
 data class Contacts(
         val name: String,
+        val local:String,
         val phone: String
 )

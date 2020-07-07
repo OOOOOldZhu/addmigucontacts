@@ -15,6 +15,7 @@ import java.io.File
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.content.ContentUris
 import android.content.Intent
+import android.os.Build
 import android.provider.ContactsContract
 import android.provider.ContactsContract.RawContacts
 import android.provider.ContactsContract.CommonDataKinds.Phone;
@@ -27,6 +28,12 @@ import io.reactivex.Observer
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
 import jxl.Workbook
+import org.apache.poi.hssf.usermodel.HSSFWorkbook
+import org.apache.poi.ss.usermodel.WorkbookFactory
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import java.lang.Exception
+import java.util.zip.ZipFile
+import javax.xml.transform.Source
 
 class MainActivity : AppCompatActivity() {
 
@@ -76,6 +83,7 @@ class MainActivity : AppCompatActivity() {
 //                pipeWork()
                 val intent = Intent()
                     .setType("*/*")
+               // intent.setDataAndType(path, "application/excel");
                     .setAction(Intent.ACTION_GET_CONTENT)
 
                 startActivityForResult(Intent.createChooser(intent, "Select a file"), 111)
@@ -99,7 +107,8 @@ class MainActivity : AppCompatActivity() {
 //                        imetter!!.onNext(fil)
 //                        imetter!!.onComplete()
                     Log.i(TAG,"3");
-                    pipeWork(fil)
+                    //pipeWork(fil)
+                    readXslx(fil)
                 }
                 else {
                     val msg = "The chosen file is not a .txt file!"
@@ -114,58 +123,57 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    //https://www.jianshu.com/p/9bf1f7f7b642
+    fun readXslx(file:File){
+        // Example unsupportedDevice property
+        var isLowRamDevice = false
+        val isUnsupportedDevice by lazy { Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP || isLowRamDevice }
+        val workbook = if (isUnsupportedDevice) {
+            toast("您的手机系统版本太低了!")
+            HSSFWorkbook()
+        } else {
+            WorkbookFactory.create(file)
+        }
+        workbook.use { workBook ->
+            val sheet = workBook.getSheetAt(0)
+            val list = ArrayList<Contacts>()
+
+            var i = 0;
+            sheet.rowIterator().forEach { row->{
+                //row.
+                if(i == 0){
+                    Log.i(TAG,row.toString());
+                }
+                i ++;
+            } }
+            //sheet.rowIterator().
+        }
+    }
     fun pipeWork(fil:File){
-        Log.i(TAG,"4 = "+fil.absolutePath)
+        try {
 
-        Observable
-            .create<File> {
-                it.onNext(fil)
-                it.onComplete()
+
+            Log.i(TAG, "4 = " + fil.absolutePath)
+//            val workBook = Workbook.getWorkbook(fil)
+            val workBook = Workbook.getWorkbook(fil)
+            val sheet = workBook.getSheet(0) // 获取第一张表格中的数据
+            val list = ArrayList<Contacts>()
+            // 行数
+            for (row in 0 until sheet.rows) {
+                list.add(
+                    Contacts(
+                        sheet.getCell(14, row).contents,   // 第一列是姓名
+                        sheet.getCell(15, row).contents, // 省份
+                        sheet.getCell(16, row).contents    //  手机号
+                    )
+                )
             }
-        //Single.just("")
-            .flatMap {
-                Log.i(TAG,"5 = "+it.absolutePath)
-                val workBook = Workbook.getWorkbook(it)
-                val sheet = workBook.getSheet(0) // 获取第一张表格中的数据
-                val list = ArrayList<Contacts>()
-                // 行数
-                for (row in 0 until sheet.rows) {
-                    list.add(Contacts(
-                        sheet.getCell(0, row).contents, // 第一列是姓名
-                        sheet.getCell(1, row).contents  // 第二列是号码
-                    ))
-                }
-                workBook.close()
-                return@flatMap Observable.fromIterable(list)
-            }
-            .subscribeOn(Schedulers.io())
-            .doOnSubscribe {
-                if (!dialog!!.isShowing && dialog != null) {
-                    dialog!!.show()
-                }
-            }
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(object : Observer<Contacts> {
-                override fun onComplete() {
-                    if (dialog!!.isShowing && dialog != null) {
-                        dialog!!.dismiss()
-                    }
-                    Log.i(TAG,"添加完毕")
-                }
-
-                override fun onSubscribe(d: Disposable) {
-                }
-
-                override fun onNext(t: Contacts) {
-                    Log.i(TAG,"onNext")
-                    addContact(t)
-                }
-
-                override fun onError(e: Throwable) {
-                    Log.i(TAG,"错误 = "+e.message)
-                }
-
-            })
+            workBook.close()
+            Log.d(TAG, list.first().name)
+        } catch (e: Exception) {
+            Log.e(TAG,e.toString());
+        }
     }
     fun addContact(contacts: Contacts) {
         // 联系人号码可能不止一个，例如 12345678901;12345678901

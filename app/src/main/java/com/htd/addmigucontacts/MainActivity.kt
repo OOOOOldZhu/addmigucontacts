@@ -30,7 +30,7 @@ import io.reactivex.ObservableEmitter
 import io.reactivex.Observer
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
-import jxl.Workbook
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.xmlpull.v1.XmlPullParser
 import java.lang.Exception
 import java.util.zip.ZipEntry
@@ -135,33 +135,21 @@ class MainActivity : AppCompatActivity() {
 
     //https://www.jianshu.com/p/9bf1f7f7b642
     fun readXslx(file: File) {
-        
-    }
-
-    fun pipeWork(fil: File) {
-        try {
-
-
-            Log.i(TAG, "4 = " + fil.absolutePath)
-//            val workBook = Workbook.getWorkbook(fil)
-            val workBook = Workbook.getWorkbook(fil)
-            val sheet = workBook.getSheet(0) // 获取第一张表格中的数据
-            val list = ArrayList<Contacts>()
-            // 行数
-            for (row in 0 until sheet.rows) {
-                list.add(
-                    Contacts(
-                        sheet.getCell(14, row).contents,   // 第一列是姓名
-                        sheet.getCell(15, row).contents, // 省份
-                        sheet.getCell(16, row).contents    //  手机号
-                    )
-                )
+        val workbook = XSSFWorkbook(file)
+        val sheet = workbook.getSheetAt(0)
+        val rowsCount = sheet.getPhysicalNumberOfRows()
+        Log.i(TAG,"总行数： "+rowsCount)
+        val formulaEvaluator = workbook.getCreationHelper().createFormulaEvaluator()
+        for (r in 0 until rowsCount) {
+            val row = sheet.getRow(r)
+            val cellsCount = row.getPhysicalNumberOfCells()
+            for (c in 0 until cellsCount) {
+//                val value = getCellAsString(row, c, formulaEvaluator)
+//                val cellInfo = "r:$r; c:$c; v:$value"
+//                printlnToUser(cellInfo)
             }
-            workBook.close()
-            Log.d(TAG, list.first().name)
-        } catch (e: Exception) {
-            Log.e(TAG, e.toString());
         }
+        
     }
 
     fun addContact(contacts: Contacts) {
@@ -216,5 +204,9 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, word, Toast.LENGTH_SHORT);
 
     }
+
+}
+
+private fun <T> Single<T>.flatMap(function: (T) -> () -> Unit) {
 
 }

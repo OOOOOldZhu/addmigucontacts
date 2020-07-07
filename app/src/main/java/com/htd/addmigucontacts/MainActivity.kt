@@ -231,22 +231,35 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "总行数： " + rowsCount)
                 val formulaEvaluator = workbook.getCreationHelper().createFormulaEvaluator()
 
+                var nameIndex:Int = 14;
+                var localIndex:Int= 15;
+                var phoneIndex:Int= 16;
                 for (r in 0 until rowsCount) {
                     Log.i(TAG,"- - - - - - - - - - - - - - - 第${r}行 - - - - - - - - - - - - - - - ")
                     var people = Contacts();
                     val row = sheet.getRow(r)
-//                    if (r == 0) {
-//                        Log.i(TAG, "row.toString() => "+row.toString());
-//                    }
                     val cellsCount = row.getPhysicalNumberOfCells()
                     for (c in 0..cellsCount) {
                         var value = getCellAsString(row, c, formulaEvaluator)
 
                         val cellInfo = "第几行r:$r;   第几列c:$c;    值v:$value"
-                        if (c == 14) { //名字
+                        // 获取姓名、地址、电话 所在的列数
+                        if (r == 0) {
+                            if(value.equals("客户姓名")){
+                                nameIndex = c;
+                            }
+                            if(value.equals("客户地址")){
+                                localIndex = c;
+                            }
+                            if(value.equals("联系电话")){
+                                phoneIndex = c;
+                            }
+                            continue
+                        }
+                        if (c == nameIndex) { //名字
                             people.name = value
                         }
-                        if (c == 15) { //地址
+                        if (c == localIndex) { //地址
                             if (value.length > 6) {
                                 people.local = value.substring(0, 6)
                             } else {
@@ -254,7 +267,7 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
-                        if (c == 16) { //电话
+                        if (c == phoneIndex) { //电话
                             //var a = typeof value;
                             //Log.i(TAG, ""+a)
                             people.phone = value

@@ -3,8 +3,8 @@ package com.htd.addmigucontacts
 /**
  * Created by zhu on 2018-03-21.
  */
-data class Contacts(
-        val name: String,
-        val local:String,
-        val phone: String
-)
+class Contacts {
+    var name: String = "";
+    var local: String = "";
+    var phone: String = "";
+}

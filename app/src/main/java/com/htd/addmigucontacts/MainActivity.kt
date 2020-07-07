@@ -30,6 +30,8 @@ import org.apache.poi.ss.usermodel.FormulaEvaluator
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.text.SimpleDateFormat
+import kotlin.reflect.typeOf
+import kotlin.Number as Number1
 
 class MainActivity : AppCompatActivity() {
 
@@ -72,6 +74,7 @@ class MainActivity : AppCompatActivity() {
         add_btn.setOnClickListener(object : View.OnClickListener {
             override fun onClick(v: View?) {
 //                rxTest();
+                Log.i(TAG,"按钮点击了")
                 val intent = Intent()
                     .setType("*/*")
                     // intent.setDataAndType(path, "application/excel");
@@ -95,7 +98,7 @@ class MainActivity : AppCompatActivity() {
                     val toast = Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT)
                     toast.show()
                     var path =
-                        Environment.getExternalStorageDirectory().toString() + "/360/migu.xlsx"
+                        Environment.getExternalStorageDirectory().toString() + "/360/migu2.xlsx"
                     //var path2 = selectedFilename.path
                     //   /external_files/360/migu.xlsx
                     //var lastPath = path+path2!!.substring(12)
@@ -158,18 +161,39 @@ class MainActivity : AppCompatActivity() {
                 val rowsCount = sheet.getPhysicalNumberOfRows()
                 Log.i(TAG, "总行数： " + rowsCount)
                 val formulaEvaluator = workbook.getCreationHelper().createFormulaEvaluator()
+
                 for (r in 0 until rowsCount) {
+                    Log.i(TAG,"- - - - - - - - - - - - - - - 第${r}行 - - - - - - - - - - - - - - - ")
+                    var people = Contacts();
                     val row = sheet.getRow(r)
-                    if (r == 0) {
-                        Log.i(TAG, row.toString());
-                    }
+//                    if (r == 0) {
+//                        Log.i(TAG, "row.toString() => "+row.toString());
+//                    }
                     val cellsCount = row.getPhysicalNumberOfCells()
-                    for (c in 0 until cellsCount) {
-                        val value = getCellAsString(row, c, formulaEvaluator)
-                        val cellInfo = "r:$r; c:$c; v:$value"
-                        //printlnToUser(cellInfo)
-                        Log.i(TAG,value)
-                        Log.i(TAG,cellInfo)
+                    for (c in 0..cellsCount) {
+                        var value = getCellAsString(row, c, formulaEvaluator)
+
+                        val cellInfo = "第几行r:$r;   第几列c:$c;    值v:$value"
+                        if(c==14){ //名字
+                            people.name = value
+                        }
+                        if(c==15){ //地址
+                            if(value.length>6){
+                                people.local = value.substring(0,6)
+                            }else{
+                                people.local = value
+                            }
+                        }
+
+                        if(c==16){ //电话
+                            //var a = typeof value;
+                            //Log.i(TAG, ""+a)
+                            people.phone = value
+                            Log.i(TAG,""+people.name+"  "+people.local+"  "+people.phone)
+                            if(people.phone.contains("1")){
+                                addContact(people);
+                            }
+                        }
                     }
                 }
                 workbook.close()
@@ -180,7 +204,6 @@ class MainActivity : AppCompatActivity() {
             .subscribeOn(Schedulers.io())
             .doOnSubscribe {
                 runOnUiThread(Runnable {
-                    Log.i(TAG, "5555")
                     if (dialog == null) {
                         dialog = ProgressDialog(this)
                         dialog!!.setMessage(".xlsx 文件读取中...")
@@ -208,7 +231,6 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onNext(t: String) {
                     Log.i(TAG, "onNext")
-                    //addContact(t)
                 }
 
                 override fun onError(e: Throwable) {
@@ -219,6 +241,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun addContact(contacts: Contacts) {
+        Log.i(TAG,"addContact() => "+contacts.toString())
+
+        var title = contacts.name + "-"+contacts.local
         // 联系人号码可能不止一个，例如 12345678901;12345678901
         val phone =
             contacts.phone.split(";".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
@@ -236,7 +261,7 @@ class MainActivity : AppCompatActivity() {
         // 内容类型
         values.put(Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE)
         // 联系人名字
-        values.put(StructuredName.GIVEN_NAME, contacts.name)
+        values.put(StructuredName.GIVEN_NAME, title)
         // 向联系人URI添加联系人名字
         contentResolver.insert(ContactsContract.Data.CONTENT_URI, values)
         values.clear()
@@ -275,25 +300,29 @@ class MainActivity : AppCompatActivity() {
         try {
             val cell = row.getCell(c)
             val cellValue = formulaEvaluator.evaluate(cell)
-            when (cellValue.cellType) {
-                Cell.CELL_TYPE_BOOLEAN -> value = "" + cellValue.booleanValue
-                Cell.CELL_TYPE_NUMERIC -> {
-                    val numericValue = cellValue.numberValue
-                    if (HSSFDateUtil.isCellDateFormatted(cell)) {
-                        val date = cellValue.numberValue
-                        val formatter = SimpleDateFormat("dd/MM/yy")
-                        value = formatter.format(HSSFDateUtil.getJavaDate(date))
-                    } else {
-                        value = "" + numericValue
+            if(cellValue == null){
+                value =  "null"
+            }else{
+                when (cellValue.cellType) {
+                    Cell.CELL_TYPE_BOOLEAN -> value = "" + cellValue.booleanValue
+                    Cell.CELL_TYPE_NUMERIC -> {
+                        val numericValue = cellValue.numberValue
+                        if (HSSFDateUtil.isCellDateFormatted(cell)) {
+                            val date = cellValue.numberValue
+                            val formatter = SimpleDateFormat("dd/MM/yy")
+                            value = formatter.format(HSSFDateUtil.getJavaDate(date))
+                        } else {
+                            value = "" + numericValue
+                        }
                     }
+                    Cell.CELL_TYPE_STRING -> value = "" + cellValue.stringValue
                 }
-                Cell.CELL_TYPE_STRING -> value = "" + cellValue.stringValue
             }
         } catch (e: NullPointerException) {
             /* proper error handling should be here */
-            //printlnToUser(e.toString())
+            Log.i(TAG,"getCellAsString（）错误 "+e.toString());
+            value =  "kong"
         }
-
         return value
     }
 

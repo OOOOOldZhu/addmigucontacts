@@ -16,11 +16,14 @@ import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.content.ContentUris
 import android.content.Intent
 import android.os.Build
+import android.os.Environment
 import android.provider.ContactsContract
 import android.provider.ContactsContract.RawContacts
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.Data;
+import android.util.ArrayMap
 import android.util.Log
+import android.util.Xml
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import io.reactivex.ObservableEmitter
@@ -28,11 +31,11 @@ import io.reactivex.Observer
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
 import jxl.Workbook
-import org.apache.poi.hssf.usermodel.HSSFWorkbook
-import org.apache.poi.ss.usermodel.WorkbookFactory
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import org.xmlpull.v1.XmlPullParser
 import java.lang.Exception
+import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
+import java.util.zip.ZipInputStream
 import javax.xml.transform.Source
 
 class MainActivity : AppCompatActivity() {
@@ -103,7 +106,15 @@ class MainActivity : AppCompatActivity() {
                     val msg = "Chosen file: " + filenameURIStr
                     val toast = Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT)
                     toast.show()
-                    var fil = File(selectedFilename.getPath())
+                     var path = Environment.getExternalStorageDirectory( ).toString() +"/360/migu.xlsx"
+                    //var path2 = selectedFilename.path
+                    //   /external_files/360/migu.xlsx
+                    //var lastPath = path+path2!!.substring(12)
+                    //Log.i(TAG,"实际路径"+path)
+                    //Log.i(TAG,"应该路径"+path2)
+                    //Log.i(TAG,"最后路径"+lastPath)
+
+                    var fil = File(path)
 //                        imetter!!.onNext(fil)
 //                        imetter!!.onComplete()
                     Log.i(TAG, "3");
@@ -124,102 +135,86 @@ class MainActivity : AppCompatActivity() {
 
     //https://www.jianshu.com/p/9bf1f7f7b642
     fun readXslx(file: File) {
-        var workbook = XSSFWorkbook(file);
-        var sheet = workbook.getSheetAt(0);
-        var rowsCount = sheet.getPhysicalNumberOfRows();
-        var formulaEvaluator = workbook.getCreationHelper().createFormulaEvaluator();
-        for (i in 0..rowsCount) {
-            var row = sheet.getRow(i);
-            if(i ==0 ){
-                Log.i(TAG,row.toString())
-            }
-        }
-//            int cellsCount = row . getPhysicalNumberOfCells ();
-//            for (int c = 0; c < cellsCount; c++) {
-//                String value = getCellAsString (row, c, formulaEvaluator);
-//                String cellInfo = "r:"+r+"; c:"+c+"; v:"+value;
-//                printlnToUser(cellInfo);
-//            }
+        
+    }
 
-        }
-
-        fun pipeWork(fil: File) {
-            try {
+    fun pipeWork(fil: File) {
+        try {
 
 
-                Log.i(TAG, "4 = " + fil.absolutePath)
+            Log.i(TAG, "4 = " + fil.absolutePath)
 //            val workBook = Workbook.getWorkbook(fil)
-                val workBook = Workbook.getWorkbook(fil)
-                val sheet = workBook.getSheet(0) // 获取第一张表格中的数据
-                val list = ArrayList<Contacts>()
-                // 行数
-                for (row in 0 until sheet.rows) {
-                    list.add(
-                        Contacts(
-                            sheet.getCell(14, row).contents,   // 第一列是姓名
-                            sheet.getCell(15, row).contents, // 省份
-                            sheet.getCell(16, row).contents    //  手机号
-                        )
+            val workBook = Workbook.getWorkbook(fil)
+            val sheet = workBook.getSheet(0) // 获取第一张表格中的数据
+            val list = ArrayList<Contacts>()
+            // 行数
+            for (row in 0 until sheet.rows) {
+                list.add(
+                    Contacts(
+                        sheet.getCell(14, row).contents,   // 第一列是姓名
+                        sheet.getCell(15, row).contents, // 省份
+                        sheet.getCell(16, row).contents    //  手机号
                     )
-                }
-                workBook.close()
-                Log.d(TAG, list.first().name)
-            } catch (e: Exception) {
-                Log.e(TAG, e.toString());
+                )
             }
+            workBook.close()
+            Log.d(TAG, list.first().name)
+        } catch (e: Exception) {
+            Log.e(TAG, e.toString());
         }
+    }
 
-        fun addContact(contacts: Contacts) {
-            // 联系人号码可能不止一个，例如 12345678901;12345678901
-            val phone =
-                contacts.phone.split(";".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+    fun addContact(contacts: Contacts) {
+        // 联系人号码可能不止一个，例如 12345678901;12345678901
+        val phone =
+            contacts.phone.split(";".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
 
-            // 创建一个空的ContentValues
-            val values = ContentValues()
-            // 向RawContacts.CONTENT_URI空值插入，
-            // 先获取Android系统返回的rawContactId
-            // 后面要基于此id插入值
-            val rawContactUri = contentResolver.insert(RawContacts.CONTENT_URI, values)
-            val rawContactId = ContentUris.parseId(rawContactUri)
-            values.clear()
+        // 创建一个空的ContentValues
+        val values = ContentValues()
+        // 向RawContacts.CONTENT_URI空值插入，
+        // 先获取Android系统返回的rawContactId
+        // 后面要基于此id插入值
+        val rawContactUri = contentResolver.insert(RawContacts.CONTENT_URI, values)
+        val rawContactId = ContentUris.parseId(rawContactUri)
+        values.clear()
 
-            values.put(Data.RAW_CONTACT_ID, rawContactId)
-            // 内容类型
-            values.put(Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE)
-            // 联系人名字
-            values.put(StructuredName.GIVEN_NAME, contacts.name)
-            // 向联系人URI添加联系人名字
-            contentResolver.insert(ContactsContract.Data.CONTENT_URI, values)
-            values.clear()
+        values.put(Data.RAW_CONTACT_ID, rawContactId)
+        // 内容类型
+        values.put(Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE)
+        // 联系人名字
+        values.put(StructuredName.GIVEN_NAME, contacts.name)
+        // 向联系人URI添加联系人名字
+        contentResolver.insert(ContactsContract.Data.CONTENT_URI, values)
+        values.clear()
 
+        values.put(Data.RAW_CONTACT_ID, rawContactId)
+        values.put(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE)
+        // 联系人的电话号码
+        values.put(Phone.NUMBER, phone[0])
+        // 电话类型
+        values.put(Phone.TYPE, Phone.TYPE_MOBILE)
+        // 向联系人电话号码URI添加电话号码
+        contentResolver.insert(Data.CONTENT_URI, values)
+        values.clear()
+
+        // 当联系人存在多个号码，第二个号码存在工作电话
+        if (phone.size > 1) {
             values.put(Data.RAW_CONTACT_ID, rawContactId)
             values.put(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE)
-            // 联系人的电话号码
-            values.put(Phone.NUMBER, phone[0])
+            // 联系人的工作电话号码
+            values.put(Phone.NUMBER, phone[1])
             // 电话类型
-            values.put(Phone.TYPE, Phone.TYPE_MOBILE)
+            values.put(Phone.TYPE, Phone.TYPE_WORK_MOBILE)
             // 向联系人电话号码URI添加电话号码
             contentResolver.insert(Data.CONTENT_URI, values)
             values.clear()
-
-            // 当联系人存在多个号码，第二个号码存在工作电话
-            if (phone.size > 1) {
-                values.put(Data.RAW_CONTACT_ID, rawContactId)
-                values.put(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE)
-                // 联系人的工作电话号码
-                values.put(Phone.NUMBER, phone[1])
-                // 电话类型
-                values.put(Phone.TYPE, Phone.TYPE_WORK_MOBILE)
-                // 向联系人电话号码URI添加电话号码
-                contentResolver.insert(Data.CONTENT_URI, values)
-                values.clear()
-            }
         }
+    }
 
 
-        fun toast(word: String) {
-            Toast.makeText(this, word, Toast.LENGTH_SHORT);
-
-        }
+    fun toast(word: String) {
+        Toast.makeText(this, word, Toast.LENGTH_SHORT);
 
     }
+
+}

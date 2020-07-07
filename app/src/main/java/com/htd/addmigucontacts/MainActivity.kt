@@ -321,7 +321,7 @@ class MainActivity : AppCompatActivity() {
     fun addContact(contacts: Contacts) {
         Log.i(TAG, "addContact() => " + contacts.toString())
 
-        var title = contacts.name + "-" + contacts.local
+        var title = "咪咕-"+contacts.name + "-" + contacts.local
         // 联系人号码可能不止一个，例如 12345678901;12345678901
         val phone =
             contacts.phone.split(";".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()

@@ -14,7 +14,10 @@ import java.io.File
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.content.ContentUris
 import android.content.Intent
+import android.database.Cursor
+import android.net.Uri
 import android.os.Environment
+import android.os.Handler
 import android.provider.ContactsContract
 import android.provider.ContactsContract.RawContacts
 import android.provider.ContactsContract.CommonDataKinds.Phone;
@@ -30,6 +33,7 @@ import org.apache.poi.ss.usermodel.FormulaEvaluator
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.text.SimpleDateFormat
+import java.util.concurrent.TimeUnit
 import kotlin.reflect.typeOf
 import kotlin.Number as Number1
 
@@ -74,7 +78,7 @@ class MainActivity : AppCompatActivity() {
         add_btn.setOnClickListener(object : View.OnClickListener {
             override fun onClick(v: View?) {
 //                rxTest();
-                Log.i(TAG,"按钮点击了")
+                Log.i(TAG, "按钮点击了")
                 val intent = Intent()
                     .setType("*/*")
                     // intent.setDataAndType(path, "application/excel");
@@ -83,6 +87,71 @@ class MainActivity : AppCompatActivity() {
                 startActivityForResult(Intent.createChooser(intent, "Select a file"), 111)
             }
         });
+        delete_btn.setOnClickListener(object : View.OnClickListener {
+            override fun onClick(v: View?) {
+                deleteContact();
+            }
+        });
+    }
+    fun showDialog(msg :String){
+        runOnUiThread(Runnable {
+            if (dialog == null) {
+                dialog = ProgressDialog(this)
+                dialog!!.setMessage(msg)
+                dialog!!.setCancelable(false)
+            }
+            if (!dialog!!.isShowing && dialog != null) {
+                dialog!!.show()
+            }
+        })
+    }
+    fun hideDialog(){
+        runOnUiThread(Runnable {
+            if (dialog!!.isShowing && dialog != null) {
+                dialog!!.dismiss()
+            }
+        })
+    }
+    fun deleteContact() {
+        Log.i(TAG, "批量删除通讯录数据")
+        showDialog("批量删除通讯录数据...");
+        //contentResolver.delete(Data.CONTENT_URI, values)
+
+        var uri = ContactsContract.Data.CONTENT_URI;
+        //Cursor query(@NonNull Uri uri, @Nullable String[] projection,
+        // @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder)
+        //预期的
+        var projection :Array<String> = arrayOf(ContactsContract.CommonDataKinds.Phone._ID,
+            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+            ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID,
+            ContactsContract.CommonDataKinds.Phone.NUMBER)
+
+        var cursorUser = contentResolver.query(uri, projection, null, null, null);
+
+
+        while( cursorUser!!.moveToNext()) {
+            var id = cursorUser.getInt(0); // 按上面数组的声明顺序获取
+            var name = cursorUser.getString(1);
+            var rawContactsId = cursorUser.getInt(2);
+
+            if(name.contains("-")){
+                //@Nullable String where, @Nullable String[] selectionArgs
+                var selectionArgs:Array<String> = arrayOf(""+id)
+                contentResolver.delete(Data.CONTENT_URI, ContactsContract.Data._ID +"=?",selectionArgs);
+            }
+        }
+        Log.i(TAG, "删除完成...")
+
+        Observable.create<String> {
+            it.onNext("1")
+            it.onComplete()
+        }
+        .delay(3,TimeUnit.SECONDS)
+            .flatMap {
+                hideDialog();
+                return@flatMap Observable.just("2")
+            }
+        .subscribe()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -174,23 +243,23 @@ class MainActivity : AppCompatActivity() {
                         var value = getCellAsString(row, c, formulaEvaluator)
 
                         val cellInfo = "第几行r:$r;   第几列c:$c;    值v:$value"
-                        if(c==14){ //名字
+                        if (c == 14) { //名字
                             people.name = value
                         }
-                        if(c==15){ //地址
-                            if(value.length>6){
-                                people.local = value.substring(0,6)
-                            }else{
+                        if (c == 15) { //地址
+                            if (value.length > 6) {
+                                people.local = value.substring(0, 6)
+                            } else {
                                 people.local = value
                             }
                         }
 
-                        if(c==16){ //电话
+                        if (c == 16) { //电话
                             //var a = typeof value;
                             //Log.i(TAG, ""+a)
                             people.phone = value
-                            Log.i(TAG,""+people.name+"  "+people.local+"  "+people.phone)
-                            if(people.phone.contains("1")){
+                            Log.i(TAG, "" + people.name + "  " + people.local + "  " + people.phone)
+                            if (people.phone.contains("1")) {
                                 addContact(people);
                             }
                         }
@@ -203,25 +272,12 @@ class MainActivity : AppCompatActivity() {
             }
             .subscribeOn(Schedulers.io())
             .doOnSubscribe {
-                runOnUiThread(Runnable {
-                    if (dialog == null) {
-                        dialog = ProgressDialog(this)
-                        dialog!!.setMessage(".xlsx 文件读取中...")
-                        dialog!!.setCancelable(false)
-                    }
-                    if (!dialog!!.isShowing && dialog != null) {
-                        dialog!!.show()
-                    }
-                })
+                showDialog("读取.xslx并添加通讯录过程中...")
             }
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(object : Observer<String> {
                 override fun onComplete() {
-                    runOnUiThread(Runnable {
-                        if (dialog!!.isShowing && dialog != null) {
-                            dialog!!.dismiss()
-                        }
-                    })
+                    hideDialog()
                     Log.i(TAG, "添加完毕")
                 }
 
@@ -241,9 +297,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun addContact(contacts: Contacts) {
-        Log.i(TAG,"addContact() => "+contacts.toString())
+        Log.i(TAG, "addContact() => " + contacts.toString())
 
-        var title = contacts.name + "-"+contacts.local
+        var title = contacts.name + "-" + contacts.local
         // 联系人号码可能不止一个，例如 12345678901;12345678901
         val phone =
             contacts.phone.split(";".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
@@ -300,9 +356,9 @@ class MainActivity : AppCompatActivity() {
         try {
             val cell = row.getCell(c)
             val cellValue = formulaEvaluator.evaluate(cell)
-            if(cellValue == null){
-                value =  "null"
-            }else{
+            if (cellValue == null) {
+                value = "null"
+            } else {
                 when (cellValue.cellType) {
                     Cell.CELL_TYPE_BOOLEAN -> value = "" + cellValue.booleanValue
                     Cell.CELL_TYPE_NUMERIC -> {
@@ -320,12 +376,11 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: NullPointerException) {
             /* proper error handling should be here */
-            Log.i(TAG,"getCellAsString（）错误 "+e.toString());
-            value =  "kong"
+            Log.i(TAG, "getCellAsString（）错误 " + e.toString());
+            value = "kong"
         }
         return value
     }
-
 
 
 }

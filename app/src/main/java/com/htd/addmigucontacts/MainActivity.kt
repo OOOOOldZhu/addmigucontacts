@@ -139,7 +139,7 @@ class MainActivity : AppCompatActivity() {
             var name = cursorUser.getString(1);
             var rawContactsId = cursorUser.getInt(2);
 
-            if (name.contains("-")) {
+            if (name.contains("咪咕-")) {
                 //@Nullable String where, @Nullable String[] selectionArgs
                 var selectionArgs: Array<String> = arrayOf("" + id)
                 contentResolver.delete(

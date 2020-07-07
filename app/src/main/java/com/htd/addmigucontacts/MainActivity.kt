@@ -93,7 +93,8 @@ class MainActivity : AppCompatActivity() {
             }
         });
     }
-    fun showDialog(msg :String){
+
+    fun showDialog(msg: String) {
         runOnUiThread(Runnable {
             if (dialog == null) {
                 dialog = ProgressDialog(this)
@@ -105,13 +106,15 @@ class MainActivity : AppCompatActivity() {
             }
         })
     }
-    fun hideDialog(){
+
+    fun hideDialog() {
         runOnUiThread(Runnable {
             if (dialog!!.isShowing && dialog != null) {
                 dialog!!.dismiss()
             }
         })
     }
+
     fun deleteContact() {
         Log.i(TAG, "批量删除通讯录数据")
         showDialog("批量删除通讯录数据...");
@@ -121,23 +124,29 @@ class MainActivity : AppCompatActivity() {
         //Cursor query(@NonNull Uri uri, @Nullable String[] projection,
         // @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder)
         //预期的
-        var projection :Array<String> = arrayOf(ContactsContract.CommonDataKinds.Phone._ID,
+        var projection: Array<String> = arrayOf(
+            ContactsContract.CommonDataKinds.Phone._ID,
             ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
             ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID,
-            ContactsContract.CommonDataKinds.Phone.NUMBER)
+            ContactsContract.CommonDataKinds.Phone.NUMBER
+        )
 
         var cursorUser = contentResolver.query(uri, projection, null, null, null);
 
 
-        while( cursorUser!!.moveToNext()) {
+        while (cursorUser!!.moveToNext()) {
             var id = cursorUser.getInt(0); // 按上面数组的声明顺序获取
             var name = cursorUser.getString(1);
             var rawContactsId = cursorUser.getInt(2);
 
-            if(name.contains("-")){
+            if (name.contains("-")) {
                 //@Nullable String where, @Nullable String[] selectionArgs
-                var selectionArgs:Array<String> = arrayOf(""+id)
-                contentResolver.delete(Data.CONTENT_URI, ContactsContract.Data._ID +"=?",selectionArgs);
+                var selectionArgs: Array<String> = arrayOf("" + id)
+                contentResolver.delete(
+                    Data.CONTENT_URI,
+                    ContactsContract.Data._ID + "=?",
+                    selectionArgs
+                );
             }
         }
         Log.i(TAG, "删除完成...")
@@ -146,12 +155,12 @@ class MainActivity : AppCompatActivity() {
             it.onNext("1")
             it.onComplete()
         }
-        .delay(3,TimeUnit.SECONDS)
+            .delay(3, TimeUnit.SECONDS)
             .flatMap {
                 hideDialog();
                 return@flatMap Observable.just("2")
             }
-        .subscribe()
+            .subscribe()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -168,17 +177,14 @@ class MainActivity : AppCompatActivity() {
                     toast.show()
                     var path =
                         Environment.getExternalStorageDirectory().toString() + "/360/migu2.xlsx"
-                    //var path2 = selectedFilename.path
-                    //   /external_files/360/migu.xlsx
-                    //var lastPath = path+path2!!.substring(12)
-                    //Log.i(TAG,"实际路径"+path)
-                    //Log.i(TAG,"应该路径"+path2)
-                    //Log.i(TAG,"最后路径"+lastPath)
+                    var path2 = selectedFilename.path
+                    var ind = path2?.indexOf("external_files")?.plus(14);
+                    var path3 =
+                        Environment.getExternalStorageDirectory().toString() + path2?.substring(ind!!)
+                    //Log.i(TAG, "实际路径= " + path)
+                    //Log.i(TAG, "理论路径 = " + path3)
 
-                    var fil = File(path)
-//                        imetter!!.onNext(fil)
-//                        imetter!!.onComplete()
-                    //pipeWork(fil)
+                    var fil = File(path3)
                     readXslx(fil)
                 } else {
                     val msg = "The chosen file is not a .txt file!"
@@ -231,11 +237,14 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "总行数： " + rowsCount)
                 val formulaEvaluator = workbook.getCreationHelper().createFormulaEvaluator()
 
-                var nameIndex:Int = 14;
-                var localIndex:Int= 15;
-                var phoneIndex:Int= 16;
+                var nameIndex: Int = 14;
+                var localIndex: Int = 15;
+                var phoneIndex: Int = 16;
                 for (r in 0 until rowsCount) {
-                    Log.i(TAG,"- - - - - - - - - - - - - - - 第${r}行 - - - - - - - - - - - - - - - ")
+                    Log.i(
+                        TAG,
+                        "- - - - - - - - - - - - - - - 第${r}行 - - - - - - - - - - - - - - - "
+                    )
                     var people = Contacts();
                     val row = sheet.getRow(r)
                     val cellsCount = row.getPhysicalNumberOfCells()
@@ -245,13 +254,13 @@ class MainActivity : AppCompatActivity() {
                         val cellInfo = "第几行r:$r;   第几列c:$c;    值v:$value"
                         // 获取姓名、地址、电话 所在的列数
                         if (r == 0) {
-                            if(value.equals("客户姓名")){
+                            if (value.equals("客户姓名")) {
                                 nameIndex = c;
                             }
-                            if(value.equals("客户地址")){
+                            if (value.equals("客户地址")) {
                                 localIndex = c;
                             }
-                            if(value.equals("联系电话")){
+                            if (value.equals("联系电话")) {
                                 phoneIndex = c;
                             }
                             continue

@@ -170,6 +170,7 @@ class MainActivity : AppCompatActivity() {
         if ((requestCode == 111) && (resultCode == RESULT_OK)) {
             val selectedFilename = data?.data //The uri with the location of the file
             if (selectedFilename != null) {
+                Log.i(TAG,"selectedFilename.path = "+selectedFilename.path)
                 val filenameURIStr = selectedFilename.toString()
                 if (filenameURIStr.endsWith(".xlsx", true)) {
                     val msg = "Chosen file: " + filenameURIStr
@@ -180,6 +181,7 @@ class MainActivity : AppCompatActivity() {
                     // MI5 path is          =>  /external_files/360/migu2.xlsx
                     // Redmi 10x 4G path is =>  /QQBrowser/migu.xlsx
                     var path2 = selectedFilename.path
+
                     //  external_files/360/migu2.xlsx
                     //  QQBrowser/migu.xlsx
                     var a = path2?.substring(1)
@@ -196,7 +198,7 @@ class MainActivity : AppCompatActivity() {
                     var fil = File(lastPath)
                     readXslx(fil)
                 } else {
-                    val msg = "The chosen file is not a .txt file!"
+                    val msg = "The chosen file is not a .xlsx file!"
                     val toast = Toast.makeText(applicationContext, msg, Toast.LENGTH_LONG)
                     toast.show()
                 }

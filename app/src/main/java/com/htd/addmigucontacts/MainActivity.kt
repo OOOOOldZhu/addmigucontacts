@@ -187,7 +187,7 @@ class MainActivity : AppCompatActivity() {
                     Log.i(TAG, "path2 = " + path2)
                     //Log.i(TAG, "path3 = " + path3)
                     Log.i(TAG, "lastPath = " + lastPath)
-                    lastPath = "/storage/emulated/0/咪咕订单数据.xlsx"
+                    //lastPath = "/storage/emulated/0/咪咕订单数据.xlsx"
                     var fil = File(lastPath)
                     readXslx(fil)
                 } else {

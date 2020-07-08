@@ -13,3 +13,5 @@
    
 3，删除通讯录联系人：
    https://blog.csdn.net/ucxiii/article/details/59112435
+
+此项目运行在Redmi 10x 4G（Android 10）上会报错。MI5上运行没有问题。

@@ -262,10 +262,10 @@ class MainActivity : AppCompatActivity() {
                 var localIndex: Int = 15;
                 var phoneIndex: Int = 16;
                 for (r in 0 until rowsCount) {
-                    Log.i(
-                        TAG,
-                        "- - - - - - - - - - - - - - - 第${r}行 - - - - - - - - - - - - - - - "
-                    )
+                    Log.i(TAG,"- - - - - - - - - - - - - - - 第${r}行 - - - - - - - - - - - - - - - ")
+                    runOnUiThread(Runnable {
+                        dialog!!.setMessage("" + r + "/" + rowsCount);
+                    })
                     var people = Contacts();
                     val row = sheet.getRow(r)
                     val cellsCount = row.getPhysicalNumberOfCells()

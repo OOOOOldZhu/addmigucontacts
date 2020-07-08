@@ -193,9 +193,19 @@ class MainActivity : AppCompatActivity() {
                     var b = a?.substring(inde!!)
                     var lastPath = Environment.getExternalStorageDirectory().toString() + b;
 
+                    //lastPath = "/storage/self/primary/1/migu2.xlsx"
+                    //lastPath = "/storage/migu2.xlsx"
                     Log.i(TAG,lastPath)
 
                     var fil = File(lastPath)
+
+                    var aa = fil.exists()
+                    var bb = fil.isDirectory
+                    var cc = fil.isFile
+
+                    Log.i(TAG,"fil.exists = "       +aa)
+                    Log.i(TAG,"fil.isDirectory = "  +bb)
+                    Log.i(TAG,"fil.isFile = "       +cc)
                     readXslx(fil)
                 } else {
                     val msg = "The chosen file is not a .xlsx file!"

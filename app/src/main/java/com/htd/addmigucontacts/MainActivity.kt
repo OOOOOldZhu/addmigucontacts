@@ -177,17 +177,22 @@ class MainActivity : AppCompatActivity() {
                     toast.show()
                     var path =
                         Environment.getExternalStorageDirectory().toString() + "/360/migu2.xlsx"
-                    var path2 = selectedFilename.path  /// QQBrowser/migu.xlsx
-                    var ind = path2?.lastIndexOf("/")?.plus(1)
-                    //var ind = path2?.indexOf("external_files")?.plus(14);
-                    //var path3 = path2?.substring(ind!!)
+                    // MI5 path is          =>  /external_files/360/migu2.xlsx
+                    // Redmi 10x 4G path is =>  /QQBrowser/migu.xlsx
+                    var path2 = selectedFilename.path
+                    //  external_files/360/migu2.xlsx
+                    //  QQBrowser/migu.xlsx
+                    var a = path2?.substring(1)
 
-                    var fileName = path2?.substring(ind!!)
-                    var lastPath = Environment.getExternalStorageDirectory().toString() +"/"+ fileName;
-                    Log.i(TAG, "path2 = " + path2)
-                    //Log.i(TAG, "path3 = " + path3)
-                    Log.i(TAG, "lastPath = " + lastPath)
-                    //lastPath = "/storage/emulated/0/咪咕订单数据.xlsx"
+                    var inde = a?.indexOf("/")
+
+                    //  /360/migu2.xlsx
+                    //  /migu.xlsx
+                    var b = a?.substring(inde!!)
+                    var lastPath = Environment.getExternalStorageDirectory().toString() + b;
+
+                    Log.i(TAG,lastPath)
+
                     var fil = File(lastPath)
                     readXslx(fil)
                 } else {

@@ -24,13 +24,13 @@ import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.Data;
 import android.util.Log
 import android.view.View
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import io.reactivex.Observer
 import io.reactivex.disposables.Disposable
 import org.apache.poi.hssf.usermodel.HSSFDateUtil
-import org.apache.poi.ss.usermodel.Cell
-import org.apache.poi.ss.usermodel.FormulaEvaluator
-import org.apache.poi.ss.usermodel.Row
+import org.apache.poi.hssf.usermodel.HSSFWorkbook
+import org.apache.poi.ss.usermodel.*
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
@@ -177,14 +177,18 @@ class MainActivity : AppCompatActivity() {
                     toast.show()
                     var path =
                         Environment.getExternalStorageDirectory().toString() + "/360/migu2.xlsx"
-                    var path2 = selectedFilename.path
-                    var ind = path2?.indexOf("external_files")?.plus(14);
-                    var path3 =
-                        Environment.getExternalStorageDirectory().toString() + path2?.substring(ind!!)
-                    //Log.i(TAG, "实际路径= " + path)
-                    //Log.i(TAG, "理论路径 = " + path3)
+                    var path2 = selectedFilename.path  /// QQBrowser/migu.xlsx
+                    var ind = path2?.lastIndexOf("/")?.plus(1)
+                    //var ind = path2?.indexOf("external_files")?.plus(14);
+                    //var path3 = path2?.substring(ind!!)
 
-                    var fil = File(path3)
+                    var fileName = path2?.substring(ind!!)
+                    var lastPath = Environment.getExternalStorageDirectory().toString() +"/"+ fileName;
+                    Log.i(TAG, "path2 = " + path2)
+                    //Log.i(TAG, "path3 = " + path3)
+                    Log.i(TAG, "lastPath = " + lastPath)
+                    lastPath = "/storage/emulated/0/咪咕订单数据.xlsx"
+                    var fil = File(lastPath)
                     readXslx(fil)
                 } else {
                     val msg = "The chosen file is not a .txt file!"
@@ -312,7 +316,19 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onError(e: Throwable) {
-                    Log.i(TAG, "错误 = " + e.message)
+                    hideDialog()
+                    val builder = AlertDialog.Builder(this@MainActivity );
+                    builder.setTitle("报错信息")
+                    builder.setMessage(e.toString())
+                    val alert = builder.create()
+//                    builder.setPositiveButton("我知道了") { dialog, which -> {
+//
+//                    } }
+                    builder.setNegativeButton("确定") { dialog, which -> {
+                        alert.dismiss()
+                    } }
+                    alert.show()
+                    Log.i(TAG, "错误 = " + e.toString())
                 }
 
             })
